@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIP + Lumpsum Calculator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1a1a18;
+    --text2: #6b6b67;
+    --text3: #9b9b96;
+    --green: #0f6e56;
+    --green-light: #e1f5ee;
+    --green-mid: #1d9e75;
+    --blue: #185fa5;
+    --blue-light: #e6f1fb;
+    --accent: #0f6e56;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --surface: #252523;
+      --surface2: #2e2e2b;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.18);
+      --text: #f0efe9;
+      --text2: #a0a09a;
+      --text3: #6b6b67;
+      --green-light: #04342c;
+      --blue-light: #042c53;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+  }
+
+  .page-wrap {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 24px;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    margin-bottom: 4px;
+  }
+
+  header p {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.5;
+    max-width: 520px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 9px 0;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    background: transparent;
+    color: var(--text2);
+    transition: all .15s;
+    font-family: inherit;
+  }
+
+  .tab-btn.active {
+    background: var(--surface);
+    color: var(--text);
+    border: 0.5px solid var(--border2);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 14px;
+  }
+
+  .input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .input-row:last-child { margin-bottom: 0; }
+
+  .input-label {
+    font-size: 13px;
+    color: var(--text2);
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .input-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1.4;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--border2);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid var(--surface);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  .val-display {
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 90px;
+    text-align: right;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .metric {
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    border: 0.5px solid var(--border);
+  }
+
+  .metric-label {
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 5px;
+  }
+
+  .metric-val {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  .metric-val.green { color: var(--green); }
+
+  .metric-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  .chart-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+
+  .chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  canvas#chart {
+    width: 100% !important;
+    display: block;
+  }
+
+  .table-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+
+  .table-scroll {
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    min-width: 480px;
+  }
+
+  thead th {
+    background: var(--surface2);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    padding: 9px 14px;
+    text-align: right;
+    border-bottom: 0.5px solid var(--border2);
+    white-space: nowrap;
+  }
+
+  thead th:first-child { text-align: left; }
+
+  tbody td {
+    padding: 7px 14px;
+    text-align: right;
+    color: var(--text);
+    border-bottom: 0.5px solid var(--border);
+  }
+
+  tbody td:first-child { text-align: left; font-weight: 600; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) td { background: var(--surface2); }
+  .gain-cell { color: var(--green); font-weight: 500; }
+
+  .disclaimer {
+    font-size: 11.5px;
+    color: var(--text3);
+    line-height: 1.6;
+    padding: 12px 16px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 0.5px solid var(--border);
+    border-left: 3px solid var(--border2);
+  }
+
+  .disclaimer strong { color: var(--text2); }
+
+  @media (max-width: 520px) {
+    .input-row { flex-wrap: wrap; gap: 6px; }
+    .input-label { min-width: 100%; }
+    .input-controls { width: 100%; }
+    header h1 { font-size: 18px; }
+    .metric-val { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <header>
+    <h1>SIP + Lumpsum Calculator</h1>
+    <p>Estimate the potential growth of your investments over time. Adjust the sliders to compare different scenarios instantly.</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="setMode('sip')">SIP</button>
+    <button class="tab-btn" onclick="setMode('lumpsum')">Lumpsum</button>
+    <button class="tab-btn" onclick="setMode('combined')">SIP + Lumpsum</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Investment inputs</div>
+
+    <div id="sip-inputs">
+      <div class="input-row">
+        <span class="input-label">Monthly SIP amount</span>
+        <div class="input-controls">
+          <input type="range" id="sipAmt" min="500" max="200000" step="500" value="10000" oninput="compute()">
+          <span class="val-display" id="sipAmtV">₹10,000</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="lump-inputs" style="display:none">
+      <div class="input-row">
+        <span class="input-label">Lumpsum amount</span>
+        <div class="input-controls">
+          <input type="range" id="lumpAmt" min="10000" max="10000000" step="10000" value="500000" oninput="compute()">
+          <span class="val-display" id="lumpAmtV">₹5,00,000</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="both-inputs" style="display:none">
+      <div class="input-row">
+        <span class="input-label">Monthly SIP amount</span>
+        <div class="input-controls">
+          <input type="range" id="sipAmt2" min="500" max="200000" step="500" value="10000" oninput="compute()">
+          <span class="val-display" id="sipAmt2V">₹10,000</span>
+        </div>
+      </div>
+      <div class="input-row">
+        <span class="input-label">Lumpsum amount</span>
+        <div class="input-controls">
+          <input type="range" id="lumpAmt2" min="10000" max="10000000" step="10000" value="500000" oninput="compute()">
+          <span class="val-display" id="lumpAmt2V">₹5,00,000</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <span class="input-label">Expected annual return</span>
+      <div class="input-controls">
+        <input type="range" id="rate" min="1" max="30" step="0.5" value="12" oninput="compute()">
+        <span class="val-display" id="rateV">12%</span>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <span class="input-label">Investment period</span>
+      <div class="input-controls">
+        <input type="range" id="years" min="1" max="40" step="1" value="10" oninput="compute()">
+        <span class="val-display" id="yearsV">10 yrs</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="metrics" id="metrics"></div>
+
+  <div class="chart-card">
+    <div class="chart-legend" id="chart-legend"></div>
+    <canvas id="chart" height="260"></canvas>
+  </div>
+
+  <div class="table-card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Year</th>
+            <th>Invested (₹)</th>
+            <th>Est. Returns (₹)</th>
+            <th>Total Value (₹)</th>
+            <th>Absolute Gain</th>
+          </tr>
+        </thead>
+        <tbody id="tBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <p class="disclaimer">
+    <strong>Disclaimer:</strong> Mutual fund investments are subject to market risks. Read all scheme-related documents carefully before investing. Past performance is not indicative of future returns. This calculator provides only an illustrative estimate and does not guarantee any specific returns. The results are based on a fixed rate of return which may vary in actual scenarios.
+  </p>
+
+</div>
+
+<script>
+let mode = 'sip';
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['sip','lumpsum','combined'][i] === m);
+  });
+  document.getElementById('sip-inputs').style.display   = (m === 'sip')      ? '' : 'none';
+  document.getElementById('lump-inputs').style.display  = (m === 'lumpsum')  ? '' : 'none';
+  document.getElementById('both-inputs').style.display  = (m === 'combined') ? '' : 'none';
+  compute();
+}
+
+function fmt(n) {
+  return Math.round(n).toLocaleString('en-IN');
+}
+
+function fmtC(n) {
+  n = Math.round(n);
+  if (n >= 1e7) return '₹' + (n / 1e7).toFixed(2) + ' Cr';
+  if (n >= 1e5) return '₹' + (n / 1e5).toFixed(2) + ' L';
+  return '₹' + n.toLocaleString('en-IN');
+}
+
+function getSIP()  { return mode === 'sip' ? +document.getElementById('sipAmt').value : mode === 'combined' ? +document.getElementById('sipAmt2').value : 0; }
+function getLump() { return mode === 'lumpsum' ? +document.getElementById('lumpAmt').value : mode === 'combined' ? +document.getElementById('lumpAmt2').value : 0; }
+
+// ── canvas chart ──────────────────────────────────────────────────────────────
+const COLORS = {
+  invested : '#B4B2A9',
+  returns  : '#1D9E75',
+  sip      : '#3266AD',
+  lumpsum  : '#1D9E75',
+};
+
+function drawChart(labels, datasets) {
+  const canvas = document.getElementById('chart');
+  const dpr    = window.devicePixelRatio || 1;
+  const W      = canvas.parentElement.clientWidth;
+  const H      = 260;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const textCol  = isDark ? '#a0a09a' : '#6b6b67';
+  const gridCol  = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+  const bgCol    = isDark ? '#252523' : '#ffffff';
+
+  const PAD = { top: 16, right: 16, bottom: 46, left: 72 };
+  const cW = W - PAD.left - PAD.right;
+  const cH = H - PAD.top  - PAD.bottom;
+
+  const n = labels.length;
+  const barW   = Math.max(4, (cW / n) * 0.62);
+  const barGap = cW / n;
+
+  // stack totals for y-max
+  const totals = datasets[0].data.map((_, i) => datasets.reduce((s, d) => s + (d.data[i] || 0), 0));
+  const yMax   = Math.max(...totals) * 1.08;
+
+  // y-axis ticks
+  function niceMax(v) {
+    const mag = Math.pow(10, Math.floor(Math.log10(v)));
+    const norm = v / mag;
+    const nice = norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 5 ? 5 : 10;
+    return nice * mag;
+  }
+  const yTop  = niceMax(yMax);
+  const TICKS = 5;
+  const yStep = yTop / TICKS;
+
+  // grid + y-labels
+  ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = textCol;
+
+  for (let t = 0; t <= TICKS; t++) {
+    const val = yStep * t;
+    const y   = PAD.top + cH - (val / yTop) * cH;
+    ctx.strokeStyle = gridCol;
+    ctx.lineWidth   = 0.5;
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + cW, y); ctx.stroke();
+    let label = '';
+    if (val === 0) label = '0';
+    else if (val >= 1e7) label = (val / 1e7).toFixed(1) + 'Cr';
+    else if (val >= 1e5) label = (val / 1e5).toFixed(0) + 'L';
+    else label = (val / 1e3).toFixed(0) + 'K';
+    ctx.fillStyle = textCol;
+    ctx.fillText(label, PAD.left - 6, y);
+  }
+
+  // bars
+  datasets.forEach((ds, di) => {
+    ds.data.forEach((val, bi) => {
+      const base   = di === 0 ? 0 : datasets.slice(0, di).reduce((s, d) => s + (d.data[bi] || 0), 0);
+      const x      = PAD.left + bi * barGap + (barGap - barW) / 2;
+      const yBase  = PAD.top + cH - (base / yTop) * cH;
+      const barH   = (val / yTop) * cH;
+
+      ctx.fillStyle = ds.color;
+      const r = Math.min(3, barW / 4);
+      if (di === datasets.length - 1) {
+        // top segment: round top corners
+        ctx.beginPath();
+        ctx.moveTo(x + r, yBase - barH);
+        ctx.lineTo(x + barW - r, yBase - barH);
+        ctx.quadraticCurveTo(x + barW, yBase - barH, x + barW, yBase - barH + r);
+        ctx.lineTo(x + barW, yBase);
+        ctx.lineTo(x, yBase);
+        ctx.lineTo(x, yBase - barH + r);
+        ctx.quadraticCurveTo(x, yBase - barH, x + r, yBase - barH);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        ctx.fillRect(x, yBase - barH, barW, barH);
+      }
+    });
+  });
+
+  // x-axis labels — skip every Nth if too many
+  const skip = labels.length > 20 ? 5 : labels.length > 10 ? 2 : 1;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = textCol;
+  labels.forEach((lbl, i) => {
+    if ((i + 1) % skip !== 0 && i !== 0 && i !== labels.length - 1) return;
+    const x = PAD.left + i * barGap + barGap / 2;
+    ctx.fillText(lbl, x, PAD.top + cH + 10);
+  });
+}
+
+// ── main compute ──────────────────────────────────────────────────────────────
+function compute() {
+  const sip  = getSIP();
+  const lump = getLump();
+  const rate = +document.getElementById('rate').value;
+  const yrs  = +document.getElementById('years').value;
+
+  // update display values
+  if (mode === 'sip')      { document.getElementById('sipAmtV').textContent  = '₹' + fmt(sip); }
+  if (mode === 'lumpsum')  { document.getElementById('lumpAmtV').textContent = '₹' + fmt(lump); }
+  if (mode === 'combined') {
+    document.getElementById('sipAmt2V').textContent  = '₹' + fmt(sip);
+    document.getElementById('lumpAmt2V').textContent = '₹' + fmt(lump);
+  }
+  document.getElementById('rateV').textContent  = rate + '%';
+  document.getElementById('yearsV').textContent = yrs + ' yr' + (yrs > 1 ? 's' : '');
+
+  const mr = rate / 100 / 12;
+
+  const rows = [];
+  for (let y = 1; y <= yrs; y++) {
+    const months = y * 12;
+    const sipFV  = sip > 0 ? sip * (((Math.pow(1 + mr, months) - 1) / mr) * (1 + mr)) : 0;
+    const lumpFV = lump > 0 ? lump * Math.pow(1 + rate / 100, y) : 0;
+    const totalInvested = sip * months + lump;
+    const totalValue    = sipFV + lumpFV;
+    const gains         = totalValue - totalInvested;
+    const gainPct       = totalInvested > 0 ? ((totalValue / totalInvested - 1) * 100) : 0;
+    const sipInvested   = sip * months;
+    const sipGains      = sipFV - sipInvested;
+    const lumpGains     = lumpFV - lump;
+    rows.push({ y, totalInvested, totalValue, gains, gainPct, sipFV, lumpFV, sipInvested, sipGains, lumpGains });
+  }
+
+  const last      = rows[rows.length - 1];
+  const absRet    = last.totalInvested > 0 ? ((last.totalValue / last.totalInvested - 1) * 100) : 0;
+
+  // metrics
+  const mData = [
+    { label: 'Total invested',    val: fmtC(last.totalInvested), green: false },
+    { label: 'Estimated returns', val: fmtC(last.gains),         green: true  },
+    { label: 'Total value',       val: fmtC(last.totalValue),    green: true  },
+    { label: 'Absolute return',   val: absRet.toFixed(1) + '%',  green: true, sub: 'over ' + yrs + ' yr' + (yrs > 1 ? 's' : '') }
+  ];
+  document.getElementById('metrics').innerHTML = mData.map(m =>
+    `<div class="metric">
+      <div class="metric-label">${m.label}</div>
+      <div class="metric-val${m.green ? ' green' : ''}">${m.val}</div>
+      ${m.sub ? `<div class="metric-sub">${m.sub}</div>` : ''}
+    </div>`
+  ).join('');
+
+  // chart datasets & legend
+  const labels = rows.map(r => 'Y' + r.y);
+  let datasets, legendHtml;
+
+  if (mode === 'combined') {
+    datasets = [
+      { color: COLORS.invested, data: rows.map(r => Math.round(r.totalInvested)) },
+      { color: COLORS.sip,      data: rows.map(r => Math.round(Math.max(0, r.sipGains))) },
+      { color: COLORS.lumpsum,  data: rows.map(r => Math.round(Math.max(0, r.lumpGains))) },
+    ];
+    legendHtml = `
+      <span class="legend-item"><span class="legend-dot" style="background:${COLORS.invested}"></span>Invested</span>
+      <span class="legend-item"><span class="legend-dot" style="background:${COLORS.sip}"></span>SIP returns</span>
+      <span class="legend-item"><span class="legend-dot" style="background:${COLORS.lumpsum}"></span>Lumpsum returns</span>`;
+  } else {
+    datasets = [
+      { color: COLORS.invested, data: rows.map(r => Math.round(r.totalInvested)) },
+      { color: COLORS.returns,  data: rows.map(r => Math.round(Math.max(0, r.gains))) },
+    ];
+    legendHtml = `
+      <span class="legend-item"><span class="legend-dot" style="background:${COLORS.invested}"></span>Invested</span>
+      <span class="legend-item"><span class="legend-dot" style="background:${COLORS.returns}"></span>Est. returns</span>`;
+  }
+
+  document.getElementById('chart-legend').innerHTML = legendHtml;
+  drawChart(labels, datasets);
+
+  // spreadsheet
+  document.getElementById('tBody').innerHTML = rows.map(r =>
+    `<tr>
+      <td>Year ${r.y}</td>
+      <td>${fmt(r.totalInvested)}</td>
+      <td class="gain-cell">${fmt(r.gains)}</td>
+      <td><strong>${fmt(r.totalValue)}</strong></td>
+      <td class="gain-cell">${r.gainPct.toFixed(1)}%</td>
+    </tr>`
+  ).join('');
+}
+
+// redraw chart on resize
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(compute, 120);
+});
+
+// also redraw when dark mode changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', compute);
+
+compute();
+</script>
+</body>
+</html>
